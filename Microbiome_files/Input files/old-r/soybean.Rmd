@@ -1,0 +1,97 @@
+---
+title: "soybean"
+author: "Durga Chinthalapudi"
+date: "2024-07-17"
+output: html_document
+---
+```{r}
+
+mpm = readxl::read_excel("MPM_combined.xlsx")
+
+# Assuming 'mpm' is your data frame
+mpm$Date <- as.factor(mpm$Date)  # Convert Date to factor
+# Convert Nitrogen and Sulphur to factors
+mpm$Nitrogen <- as.factor(mpm$Nitrogen)
+mpm$Sulphur <- as.factor(mpm$Sulphur)
+
+str(mpm)
+
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+# Assuming 'mpm' is your data frame
+mpm$Date <- as.Date(mpm$Date)
+
+# Pivoting the data into long format
+mpm_long <- mpm %>%
+  pivot_longer(cols = c(ChlM, FlvM, AnthM, NFI), names_to = "Response", values_to = "Value")
+
+plot = ggplot(mpm_long, aes(x = Date, y = Value, color = Response)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Response Variables Over Time",
+       x = "Date",
+       y = "Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ Response, scales = "free_y")
+
+plot
+```
+
+```{r}
+plot2 = # Create the scatter plot with regression lines to assess linear relationships
+ggplot(mpm_long, aes(x = Date, y = Value, color = Response)) +
+  geom_point() +  # Scatter plot
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +  # Linear regression lines
+  labs(title = "Scatter Plot of Response Variables Over Time",
+       x = "Date",
+       y = "Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ Response, scales = "free_y") +
+  scale_x_date(date_breaks = "1 week", date_labels = "%b %d") # Customize x-axis for better readability
+
+plot2
+```
+
+```{r}
+nitrogen = # Create the box plot
+ggplot(mpm, aes(x = Nitrogen, y = ChlM, fill = Nitrogen)) +
+  geom_boxplot() +
+  labs(title = "Effect of Nitrogen and Sulphur on Pigments",
+       x = "Nitrogen and Sulphur Interaction",
+       y = "Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+nitrogen
+# Save the plot (optional)
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
