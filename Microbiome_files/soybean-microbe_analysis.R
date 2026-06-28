@@ -34,7 +34,9 @@ library(magrittr)
 library(igraph)
 library(Biostrings)
 library(ggdendro)
-install.packages("ggdendro")
+library(caret)
+
+install.packages("caret")
 
 ## Importing files
 
@@ -71,6 +73,8 @@ phyis = phyis[ ,-1]
 
 # add_data is used to add the environmental data
 env_soy <- trans_env$new(dataset = soy_16s_mecodataset, add_data = phyis)
+
+env_soy
 
 ##Check integer ###
 otu <- soy_16s_mecodataset$otu_table
@@ -260,4 +264,60 @@ soy_S_cluster <- t1$plot_clustering(
 soy_S_cluster
 
 #---------------------------------------------------------------------------------------------------------------------
-# Clustering #
+# Clone your 16S microeco dataset
+# Clone your 16S microeco dataset
+mt_16s <- clone(soy_16s_mecodataset)
+
+# Calculate 16S alpha diversity
+mt_16s$cal_alphadiv()
+
+# Add 16S diversity indices to sample_table
+mt_16s$sample_table$Shannon  <- mt_16s$alpha_diversity[rownames(mt_16s$sample_table), "Shannon"]
+mt_16s$sample_table$Chao1    <- mt_16s$alpha_diversity[rownames(mt_16s$sample_table), "Chao1"]
+
+# Prepare environmental predictors from your env_soy object
+x_env <- env_soy$data_env %>%
+  t() %>%
+  as.data.frame()
+
+# Make sure sample names match
+x_env <- x_env[, rownames(mt_16s$sample_table)]
+x_env
+
+# Random Forest regression: env variables predicting Shannon diversity
+rf_shannon <- trans_classifier$new(dataset = mt_16s, x.predictors = x_env,y.response = "Shannon")
+
+rf_shannon$cal_preProcess(method = c("center", "scale", "nzv"))
+
+rf_shannon$set_trainControl(method = "repeatedcv", number = 5,repeats = 5)
+
+rf_shannon$cal_train(method = "rf",metric = "RMSE",max.mtry = min(5, nrow(x_env)),max.ntree = 500)
+
+rf_shannon$cal_feature_imp()
+
+rf_shannon$plot_feature_imp(coord_flip = TRUE,colour = "red",fill = "red",width = 0.6)
+
+rf_shannon$res_feature_imp
+
+rf_shannon$cal_feature_imp(rf_feature_sig = TRUE, num.rep = 1000)
+
+rf_shannon$plot_feature_imp(show_sig_group = TRUE, coord_flip = TRUE,width = 0.6,add_sig = TRUE)
+
+# Random Forest regression: env variables predicting Chao1
+rf_chao1 <- trans_classifier$new(dataset = mt_16s, x.predictors = x_env,y.response = "Chao1")
+
+rf_chao1$cal_preProcess(method = c("center", "scale", "nzv"))
+
+rf_chao1$set_trainControl(method = "repeatedcv",number = 5,repeats = 5)
+
+rf_chao1$cal_train(method = "rf",metric = "RMSE",max.mtry = min(5, nrow(x_env)),max.ntree = 500)
+
+rf_chao1$cal_feature_imp()
+
+rf_chao1$plot_feature_imp(coord_flip = TRUE,colour = "red",fill = "red", width = 0.6)
+
+rf_chao1$res_feature_imp
+
+rf_chao1$cal_feature_imp(rf_feature_sig = TRUE,num.rep = 1000)
+
+rf_chao1$plot_feature_imp(show_sig_group = TRUE,coord_flip = TRUE,width = 0.6,add_sig = TRUE)
