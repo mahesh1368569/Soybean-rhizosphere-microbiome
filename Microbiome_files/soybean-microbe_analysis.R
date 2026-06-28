@@ -59,24 +59,29 @@ soy_16s_mecodataset$tax_table
 soy_16s_mecodataset
 
 phyis <- readxl::read_xlsx("Microbiome_files/Input files/Soybean_env.xlsx")
+phyis <- as.data.frame(phyis)
 
 rownames(phyis) = phyis[, 1]
 
 phyis = phyis[ ,-1]
 
-phyis_physiology <- phyis[, c(1:12)]
-
-phyis_plant <- phyis[, c(13:18)]
-
-phyis_soil = phyis[, c(19:21)]
-
-
 # add_data is used to add the environmental data
-env_sujan <- trans_env$new(dataset = meco_dataset, add_data = phyis)
+env_soy <- trans_env$new(dataset = soy_16s_mecodataset, add_data = phyis)
 
-env_sujan_phyis <- trans_env$new(dataset = meco_dataset, add_data = phyis_physiology)
+?trans_norm
 
-env_sujan_plant <- trans_env$new(dataset = meco_dataset, add_data = phyis_plant)
+#---------------------------------------------------------------------------------------------------------------------
+# Rarefaction #
 
-env_sujan_soil <- trans_env$new(dataset = meco_dataset, add_data = phyis_soil)
+# OTU/ASV table from microeco object
+otu <- t(soy_16s_mecodataset$otu_table)   # vegan wants samples as rows, ASVs as columns
+depth <- rowSums(otu)
 
+summary(depth)
+sort(depth)
+hist(depth, breaks = 30, main = "Sequencing depth", xlab = "Reads per sample")
+
+quantile(depth, c(0, 0.05, 0.10, 0.25, 0.50))
+
+#---------------------------------------------------------------------------------------------------------------------
+# Rarefaction #
